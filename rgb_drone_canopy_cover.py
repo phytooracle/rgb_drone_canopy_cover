@@ -1,4 +1,3 @@
-from email.mime import image
 import sys
 import numpy as np
 import pandas as pd
@@ -127,14 +126,12 @@ def rotate_plot(plots_directory, id):
 def mask_image(image_name):
     """
     """
-    lower = dictionary['color']['lower']
-    upper = dictionary['color']['upper']
+    lower = tuple(dictionary['color']['lower'])
+    upper = tuple(dictionary['color']['upper'])
 
 
     image = cv2.imread(image_name)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    plt.imshow(image)
-    plt.show()
     
     hsv_image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
     
@@ -169,8 +166,9 @@ def get_pixel_percent(image, total_pixel):
 def write_to_file(df):
     """
     """
+    dates_dir = dictionary['files']['dates_dir']
     csv_name = dictionary['files']['csv_name']
-    df.to_csv(csv_name)
+    df.to_csv(dates_dir + "/" + csv_name)
 
 
 def main():
@@ -223,6 +221,14 @@ def main():
 
                 result = mask_image(image_name)
                 percent = get_pixel_percent(result, total_pixel)
+
+                string = f"""
+                ID:               {id}
+                date:             {date}
+                total pixels:     {total_pixel}
+                pixel-percentage: {percent}
+                """
+                print(string)
 
                 df.loc[len(df.index)] = [date, id, percent]
 

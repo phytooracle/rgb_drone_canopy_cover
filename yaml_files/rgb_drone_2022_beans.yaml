@@ -11,7 +11,7 @@ image_correction:
   image_rotated: False
 
 color:
-  lower: (36, 25, 25)
-  upper: (70, 255, 255)
+  lower: [36, 25, 25]
+  upper: [70, 255, 255]
 
 
