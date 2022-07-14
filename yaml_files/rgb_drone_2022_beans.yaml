@@ -1,0 +1,17 @@
+files:
+  dates_dir: "/mnt/c/Users/nbeyz/Desktop/2022_beans/MAC-beans"
+  geojson_path: "/mnt/c/Users/nbeyz/Desktop/2022_beans/MAC-beans/2022_mac_beans_plot_boundaries.geojson"
+  plots_dir_name: "/individual_plots/"
+  csv_name: "2022_beans.csv"
+
+tiff_info:
+  common_espg: "EPSG:32612"
+
+image_correction:
+  image_rotated: False
+
+color:
+  lower: (36, 25, 25)
+  upper: (70, 255, 255)
+
+
