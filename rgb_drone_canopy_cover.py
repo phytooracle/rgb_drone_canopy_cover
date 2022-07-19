@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+"""
+Author : Nimet Beyza Bozdag
+Date   : 2022-07-18
+Purpose: Analyze the canopy cover percentage of plots over a field.
+"""
+
 import sys
 import numpy as np
 import pandas as pd
@@ -12,8 +19,6 @@ import os
 import yaml
 import argparse
 import matplotlib.pyplot as plt
-
-
 from plantcv import plantcv as pcv
 from PIL import Image
 from matplotlib.colors import hsv_to_rgb
@@ -35,6 +40,12 @@ def get_args():
                         type=str,
                         required=True)
 
+    parser.add_argument('-v',
+                        '--verbose',
+                        help='Put verbose mode ON',
+                        action='store_true')
+
+
     return parser.parse_args()
 
 
@@ -48,6 +59,7 @@ def get_all_directories():
 
 def read_geojson():
     """
+    Reads the geojson and returns the geopandas dataframe with CRS set to the common ESPG value.
     """
     geojson_path = dictionary['files']['geojson_path']
     common_espg = dictionary['tiff_info']['common_espg']
@@ -63,12 +75,24 @@ def read_geojson():
 
 def create_dataframe():
     """
+    Creates and returns dataframe to be outputted into the CSV file.
     """
     return pd.DataFrame(columns=["Date", "ID", "Percentage"])
 
 
 def crop_plot(gdf, id, src, plots_directory):
     """
+    Finds geospacial information about the plot to be cropped from the larger field tif and
+    saves the cropped image as a tif file.
+
+    Input:
+        - gdf: geopandas dataframe with geojson information of the plots
+        - id: int of the plot number
+        - src: raster image file
+        - plots_directory: string for directory to save the cropped plot image
+
+    Output:
+        - cropped plot saved in tif format
     """
     # Get the row of that plot by id and convert to json
     a = gdf[gdf['id'] == id].to_json()
@@ -95,9 +119,24 @@ def crop_plot(gdf, id, src, plots_directory):
 
 def rotate_plot(plots_directory, id):
     """
+    Rotates the plot image if the image is not straight. 
+
+    Input:
+        - plots_directory: string for directory to save the cropped plot image
+        - id: int of the plot number
+
+    Output:
+        - rotated plot image saved both as tif and png
     """
+
+    # read image file 
     img, path, filename = pcv.readimage(filename = plots_directory + f"plot_{id}.tif")
+
+    # row, and col count how many rows and columns there are from 
+    # top left corner until a colored (non-black) pixel is found, respectively. 
     row, col, offset = 0, 0, 1
+
+    # create numpy array with rgb for black (0, 0, 0) to use for comparisons
     black = np.zeros((1,3), dtype = np.int8)
 
     for i in range(len(img[0])):
@@ -110,6 +149,7 @@ def rotate_plot(plots_directory, id):
             row = j
             break
 
+    # calculate the angle by which the image is rotated
     ratio = (col - offset)/(row - offset)
     angle = np.arctan(ratio) * 180 / np.pi
 
@@ -118,6 +158,7 @@ def rotate_plot(plots_directory, id):
     # rotate image
     output = input_image.rotate(angle)
 
+    # save image
     im2 = output.crop(output.getbbox())
     im2.save(plots_directory + f"plot_{id}_rotated_cropped.tif")
     im2.save(plots_directory + f"plot_{id}_rotated_cropped.png")
@@ -125,10 +166,17 @@ def rotate_plot(plots_directory, id):
 
 def mask_image(image_name):
     """
+    Masks out the bakground of the image leaving only th green pixels that fall in the 
+    range given by lower and upper. 
+
+    Input:
+        - image_name: string with file to be opened and masked
+    
+    Return value:
+        - image (numpy array) with white background 
     """
     lower = tuple(dictionary['color']['lower'])
     upper = tuple(dictionary['color']['upper'])
-
 
     image = cv2.imread(image_name)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -146,6 +194,12 @@ def mask_image(image_name):
 
 def get_pixel_percent(image, total_pixel):
     """
+    Returns the percentage of non-white pixels to all pixels.
+
+    Input:
+        - image: numpy array of all pixels of an image
+        - total_pixel: int for total pixels (set by the first processed plot's size)
+
     """
     # Count non-white pixels.
     white = np.array([255, 255, 255])
@@ -165,6 +219,13 @@ def get_pixel_percent(image, total_pixel):
 
 def write_to_file(df):
     """
+    Writes data frame to csv file.
+
+    Input:
+        - df: dataframe to be written to output file
+
+    Output:
+        - csv file 
     """
     dates_dir = dictionary['files']['dates_dir']
     csv_name = dictionary['files']['csv_name']
@@ -175,6 +236,7 @@ def main():
 
     args = get_args()
 
+    # get yaml dictionary from the command line argument
     with open(args.yaml, 'r') as stream:
         global dictionary
         dictionary = yaml.safe_load(stream)
@@ -188,6 +250,7 @@ def main():
     total_pixel = 0
     total_pixel_set = False
     
+    # loop over all the scan-dates
     for raster_image_path in images:
         date = np.datetime64(os.path.basename(os.path.dirname(raster_image_path)))
         plots_directory = os.path.dirname(raster_image_path) + dictionary['files']['plots_dir_name']
@@ -222,13 +285,15 @@ def main():
                 result = mask_image(image_name)
                 percent = get_pixel_percent(result, total_pixel)
 
-                string = f"""
-                ID:               {id}
-                date:             {date}
-                total pixels:     {total_pixel}
-                pixel-percentage: {percent}
-                """
-                print(string)
+                if args.verbose:
+                    string = f"""
+                    ID:               {id}
+                    date:             {date}
+                    total pixels:     {total_pixel}
+                    pixel-percentage: {percent}
+                    """
+                
+                    print(string)
 
                 df.loc[len(df.index)] = [date, id, percent]
 
