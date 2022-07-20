@@ -4,6 +4,6 @@ geopandas
 plantcv
 fiona
 rasterio
-cv2
+opencv-python
 PIL
 matplotlib
