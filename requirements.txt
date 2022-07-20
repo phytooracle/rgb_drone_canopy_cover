@@ -5,5 +5,5 @@ plantcv
 fiona
 rasterio
 opencv-python
-PIL
+Pillow
 matplotlib
