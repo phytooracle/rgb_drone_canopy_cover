@@ -1,5 +1,25 @@
 # rgb_drone_canopy_cover
 
+## How to Run Using Docker:
+```
+docker run -v $PWD:/home phytooracle/rgb_drone_canopy_cover -y /home/{NAME_OF_YAML} -v
+```
+### NOTE: 
+> The yaml file should be in the working directory if the above command is used, otherwise provide the relative path of the yaml file form current working directory.
+
+## Expected Structure of the Directories
+Directory structure for the dates directory should be as follows:
+```
+{dates_dir}
+├── {date1}
+│   ├── {tif1}
+├── {date2}
+│   ├── {tif2}
+...
+```
+### NOTE:
+> Since the code uses the datetime library to get the date of the scan, all dates should be in the format YYYY-MM-DD.
+
 ## YAML File
 ### Files
 Files are used to indicate the path to required files.
